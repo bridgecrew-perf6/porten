@@ -32,6 +32,8 @@ function App() {
 
       dispatch(initApp());
     });
+
+    return
   }
 
   if (isFetching) {
@@ -50,12 +52,13 @@ function App() {
     >
       <Header sx={{ paddingBottom: "1rem" }} />
       <Routes>
+
         <Route path="/" element={<GeneralWindow />} />
 
         <Route path="/sign/*" element={<SignForm />} />
         <Route path="/login/*" element={<LoginForm />} />
 
-        <Route path="/window" element={<GeneralWindow />} />
+        <Route path="/window/*" element={<GeneralWindow />} />
       </Routes>
       {isAlert ? <AlertComponent /> : null}
     </Box>

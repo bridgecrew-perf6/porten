@@ -26,7 +26,7 @@ const GeneralWindow = () => {
 
   useEffect(() => {
     if (!isLogged) return navigate("/sign");
-  }, [isLogged]);
+  }, [isLogged, navigate]);
 
   useEffect(() => {
     if (
