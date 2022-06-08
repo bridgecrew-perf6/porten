@@ -4,48 +4,63 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import { Box } from "@mui/system";
+import { Tooltip } from "@mui/material";
 
-
-const ItemTransaction = ({ category, amount, isSpend, date }) => {
+const ItemTransaction = ({ data }) => {
   return (
     <>
-      <MenuItem 
-        divider
-        sx={{ display: { xs: "flex", sm: "block", md: "block", lg: "flex" } }}
+      <Tooltip
+        title={`${!data.description ? "no description" : data.description}`}
       >
-        <ListItemText
-          sx={{
-            display: "flex",
-            justifyContent: { xs: "flex-start", sm: "flex-start" },
-          }}
+        <MenuItem
+          divider
+          sx={{ display: { xs: "flex", sm: "block", md: "block", lg: "flex" } }}
         >
-          {!category ? (
-            <Typography>
-              top-up
-            </Typography>
-          ) : (
-            <Typography>
-              category: <b>{category}</b>
-            </Typography>
-          )}
-        </ListItemText>
-        <Box>
-          <Typography
-            sx={{ display: "flex", justifyContent: "flex-end" }}
-            variant="body1"
-            color="text.secondary"
+          <ListItemText
+            sx={{
+              display: "flex",
+              justifyContent: { xs: "flex-start", sm: "flex-start" },
+            }}
           >
-            amount: <b>{isSpend ? ` -${amount}` : ` +${amount}`}</b>
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ display: { sm: "none", md: "none", xl: "block" } }}
-          >
-            Date: <b>{new Date(date * 1000).toLocaleString()}</b>
-          </Typography>
-        </Box>
-      </MenuItem>
+            {!data.category ? (
+              <Typography>top-up</Typography>
+            ) : (
+              <Typography>
+                category: <b>{data.category}</b>
+              </Typography>
+            )}
+          </ListItemText>
+          <Box>
+            <Typography
+              sx={{ display: "flex", justifyContent: "flex-end", mb: ".5em" }}
+              variant="body1"
+              color="text.secondary"
+            >
+              amount:{" "}
+              <b>
+                {data.isSpend
+                  ? ` -${data.amount.toLocaleString("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                      maximumSignificantDigits: 2,
+                    })}`
+                  : ` +${data.amount.toLocaleString("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                      maximumSignificantDigits: 2,
+                    })}`}
+              </b>
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ display: { sm: "none", md: "none", lg: "block" } }}
+            >
+              Date: <b>{new Date(data.date).toLocaleString()}</b>
+            </Typography>
+          </Box>
+        </MenuItem>
+      </Tooltip>
     </>
   );
 };

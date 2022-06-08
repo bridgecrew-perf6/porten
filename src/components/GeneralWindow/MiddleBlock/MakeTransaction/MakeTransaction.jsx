@@ -1,126 +1,94 @@
 import { Box, Dialog } from "@mui/material";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  turnOnPreloader,
-  turnOffPreloader,
-} from "../../../../redux/preloaderSlice";
-import {
-  addNewCategory,
-  getUserCategories,
-  updateCategories,
-  getUserTransactions,
-} from "../../../../redux/userDataSlice";
-import { addTransaction } from "../../../../redux/userDataSlice";
 import ChooseCategory from "./ChooseCategory/ChooseCategory";
 import DescriptionPage from "./DescriptionPage/DescriptionsPage";
 import { turnOnAlert } from "../../../../redux/alertSlice";
+import {
+  useAddTransactionMutation,
+  useAddNewCategoryMutation,
+  useUpdateCategoryMutation,
+} from "../../../../API/api";
+import AlertComponent from "../../../Alert/AlertComponent";
 
-const MakeTransaction = ({ mode, reset, onClose, open }) => {
+const MakeTransaction = ({
+  mode,
+  reset,
+  onClose,
+  open,
+  setFetching,
+  isFetching,
+  categories,
+  colors,
+}) => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const dispatch = useDispatch();
-  const categories = useSelector((state) => state.userData.myCategories);
   const uid = useSelector((state) => state.auth.uid);
 
-  const addTransactionSubmit = (data) => {
-    dispatch(turnOnPreloader());
+  const [
+    addTransaction,
+    {
+      isLoading: isLoadingAddingTransaction,
+      isSuccess: isSuccessAddingTransaction,
+    },
+  ] = useAddTransactionMutation();
+
+  const [addNewCategory, { isLoading: isLoadingAddingCategory }] =
+    useAddNewCategoryMutation();
+
+  const [updateCategory, { isLoading: isLoadingUpdatingCategory }] =
+    useUpdateCategoryMutation();
+
+  const addTransactionSubmit = async (data) => {
+    setFetching(true);
     if (mode) {
+      await addTransaction({
+        newTrans: { ...data, isSpend: false },
+        uid,
+      });
+
       dispatch(
-        addTransaction({
-          ...data,
-          isSpend: false,
+        turnOnAlert({
+          type: "info",
+          title: "Success",
+          text: "balance has been replenished",
         })
-      ).then(() => {
-        dispatch(getUserTransactions(uid)).then((response) => {
-          dispatch(turnOffPreloader());
-          dispatch(
-            turnOnAlert({
-              type: "info",
-              title: response.meta.requestStatus,
-              text: "balance has been replenished",
-            })
-          );
-        });
-      })
+      );
     } else {
       if (data.category) {
-        Promise.all([
-          dispatch(
-            addTransaction({
-              ...data,
-              isSpend: true,
-            })
-          ),
-          dispatch(addNewCategory(data.category)),
-        ]).then(() => {
-          Promise.all([
-            dispatch(getUserCategories(uid)),
-            dispatch(getUserTransactions(uid)),
-          ]).then((response) => {
-            dispatch(turnOffPreloader());
-            if (response.every((item) => item.meta.requestStatus)) {
-              dispatch(
-                turnOnAlert({
-                  type: "info",
-                  title: "fulfilled",
-                  text: "balance has been replenished",
-                })
-              );
-            }
-          });
+        const color = getColor(colors);
+
+        await addTransaction({
+          newTrans: { ...data, isSpend: true },
+          uid,
         });
+
+        await addNewCategory({ category: data.category, color, uid });
       } else {
-        Promise.all([
-          dispatch(
-            addTransaction({
-              ...data,
-              category: selectedCategory,
-              isSpend: true,
-            })
-          ),
-          dispatch(updateCategories(selectedCategory)),
-        ]).then((data) => {
-          if (data.every((item) => item.meta.requestStatus === "fulfilled")) {
-            Promise.all([
-              dispatch(getUserCategories(uid)),
-              dispatch(getUserTransactions(uid)),
-            ]).then((response) => {
-              if (
-                data.every((item) => item.meta.requestStatus === "fulfilled")
-              ) {
-                dispatch(turnOffPreloader());
-                if (response.every((item) => item.meta.requestStatus)) {
-                  dispatch(
-                    turnOnAlert({
-                      type: "info",
-                      title: "fulfilled",
-                      text: "balance has been reduced",
-                    })
-                  );
-                } else {
-                  dispatch(
-                    turnOnAlert({
-                      type: "info",
-                      title: "error",
-                      text: "smth went wrong",
-                    })
-                  );
-                }
-              }
-            });
-          } else {
-            dispatch(
-              turnOnAlert({
-                type: "info",
-                title: "error",
-                text: "smth went wrong",
-              })
-            );
-          }
+        await addTransaction({
+          newTrans: {
+            ...data,
+            category: selectedCategory.category,
+            isSpend: true,
+          },
+          uid,
+        });
+        await updateCategory({
+          category: selectedCategory,
+          uid,
         });
       }
+
+      dispatch(
+        turnOnAlert({
+          type: "info",
+          title: "Success",
+          text: "balance has been increased",
+        })
+      );
     }
 
+    setFetching(false);
     reset();
   };
 
@@ -139,14 +107,17 @@ const MakeTransaction = ({ mode, reset, onClose, open }) => {
             mode={mode}
             changeBalance={addTransactionSubmit}
             back={reset}
+            isFetching={isFetching}
           />
         </Box>
       ) : (
         <ChooseCategory
+          categories={categories}
           mode={mode}
           reset={reset}
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
+          isFetching={isFetching}
           changeBalance={addTransactionSubmit}
         />
       )}
@@ -155,3 +126,36 @@ const MakeTransaction = ({ mode, reset, onClose, open }) => {
 };
 
 export default MakeTransaction;
+
+const getColor = (exists) => {
+  let colors = [],
+    alpha = "0.9";
+  let resultColorString = "rgba(";
+
+  colors = generateColors();
+
+  colors.forEach((item, index) => {
+    if (!(index === colors.length - 1)) {
+      resultColorString += `${item}, `;
+    } else {
+      resultColorString += `${item}, ${alpha})`;
+    }
+  });
+
+  if (exists.includes(resultColorString)) return getColor(exists);
+
+  return resultColorString;
+};
+
+const generateColors = () => {
+  let colorsArr = [];
+  for (let i = 0; i < 3; i++) {
+    colorsArr.push(getRandomNum().toString());
+  }
+
+  return colorsArr;
+};
+
+const getRandomNum = () => {
+  return Math.floor(Math.random() * (255 - 0 + 1)) + 0;
+};

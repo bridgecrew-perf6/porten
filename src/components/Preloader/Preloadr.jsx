@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { Box } from "@mui/system";
 
 const Preloader = () => {
-  const open = useSelector(state => state.preloader.isFetching);
+  // const open = useSelector(state => state.preloader.isFetching);
 
 
   return (
@@ -16,7 +16,7 @@ const Preloader = () => {
           boxShadow: "none",
         },
       }}
-      open={open}
+      open={true}
     >
       <Box sx={{ padding: ".5em" }}>
         <CircularProgress color="primary" />

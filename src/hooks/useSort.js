@@ -6,19 +6,18 @@ export function useSort(items) {
 
   useEffect(() => {
     if (!sortMode) {
-      // setSortedList(items.slice().reverse());
       setSortedList(
         items.slice().sort((a, b) => {
-          if (a.date > b.date) return 1;
-          else if (b.date > a.date) return -1;
+          if (a.date > b.date) return -1;
+          else if (b.date > a.date) return 1;
           else return 0;
         })
       );
     } else {
       setSortedList(
         items.slice().sort((a, b) => {
-          if (a.date > b.date) return -1;
-          else if (b.date > a.date) return 1;
+          if (a.date > b.date) return 1;
+          else if (b.date > a.date) return -1;
           else return 0;
         })
       );

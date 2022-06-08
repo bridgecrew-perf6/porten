@@ -11,28 +11,14 @@ export function useFilter(items, value) {
       setResultList(items);
     } else {
       setResultList(() => {
-        return test.filter((item) => item.category === filterProp);
+        return test.filter(
+          (item) =>
+            item.category.toLowerCase() === filterProp.toLowerCase() ||
+            item.category.toLowerCase().includes(filterProp.toLowerCase())
+        );
       });
     }
   }, [items, filterProp, value]);
 
   return [filterProp, setFilterProp, resultList];
 }
-
-// const resultList = ((list) => {
-//   let test = list.filter(item => item.category)
-
-//   if (filterProp === value) return list;
-
-//   return test.filter((item) => {
-
-//     if(item.category.includes(filterProp)) return true
-//     return false
-//   });
-// })(items);
-
-// return test.filter((item) => {
-
-//   if(item.category.includes(filterProp)) return true
-//   return false
-// });

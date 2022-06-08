@@ -1,92 +1,49 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Chart from "chart.js/auto";
-import BalanceDetails from "./BalanceDetails/BalanceDetails";
-
+import { Box } from "@mui/material";
+import { Pie, Doughnut } from "react-chartjs-2";
 
 const FinanceDiagram = ({ dataDiagram }) => {
-  const [curCanvas, setCurCanvas] = useState(React.createRef());
+  console.log(dataDiagram);
 
-  const image = new Image();
-  image.src = "https://www.chartjs.org/img/chartjs-logo.svg";
-
-  // const plugin = {
-  //   id: "custom_canvas_background_image",
-  //   beforeDraw: (chart) => {
-  //     if (image.complete) {
-  //     const ctx = chart.ctx;
-  //     const { top, left, width, height } = chart.chartArea;
-  //     const x = left + width / 2 - image.width / 2;
-  //     const y = top + height / 2 - image.height / 2;
-  //     ctx.font = "19px serif";
-  //     ctx.fillText("Hello world", x, y);
-  //     // ctx.drawImage(image, x, y);
-  //     } else {
-  //     image.onload = () => chart.draw();
-  //     }
-  //   },
-  // };
-
-  useEffect(() => {
-
-    const ctx = curCanvas.current.getContext("2d");
-    let chart = new Chart(ctx, {
-      type: "doughnut",
-      plugins: [<BalanceDetails />],
-      data: {
-        labels: dataDiagram.names,
-        datasets: [
-          {
-            label: "CHART",
-            data: dataDiagram.amounts,
-            backgroundColor: [
-              "rgba(255, 99, 132, 0.6)",
-              "rgba(54, 162, 235, 0.6)",
-              "rgba(255, 206, 86, 0.6)",
-              "rgba(75, 192, 192, 0.6)",
-              "rgba(153, 102, 255, 0.6)",
-              "rgba(255, 159, 64, 0.6)",
-            ],
-            borderWidth: 0,
-            hoverOffset: 2,
-            hoverBackgroundColor: [
-              "rgba(255, 99, 132, 0.9)",
-              "rgba(54, 162, 235, 0.9)",
-              "rgba(255, 206, 86, 0.9)",
-              "rgba(75, 192, 192, 0.9)",
-              "rgba(153, 102, 255, 0.9)",
-              "rgba(255, 159, 64, 0.9)",
-            ],
-          },
-        ],
+  const pieChartData = {
+    labels: dataDiagram.map((category) => category.category),
+    datasets: [
+      {
+        data: dataDiagram.map((category) => category.totalAmount),
+        backgroundColor: dataDiagram.map((category) => category.color),
+        hoverBackgroundColor: dataDiagram.map(
+          (category) => category.hoverColor
+        ),
+        borderWidth: 0,
       },
-      options: {
-        scales: {
-          x: {
-            grid: {
-              display: false,
-            },
-            display: false,
-          },
-          y: {
-            grid: {
-              display: false,
-            },
-            display: false,
-          },
+    ],
+  };
+
+  const pieChart = (
+    <Doughnut
+      // type="pie"
+      // width={130}
+      // height={50}
+      options={{
+        title: {
+          display: true,
+          fontSize: 15,
         },
-        plugins: {
-          legend: {},
+        legend: {
+          display: true, //Is the legend shown?
+          position: "top", //Position of the legend.
         },
-      },
-    });
-    window.chart = chart;
+      }}
+      data={pieChartData}
+    />
+  );
 
-    return () => chart.destroy();
-  }, [curCanvas, dataDiagram]);
-
-  
-
-  return <canvas ref={curCanvas} id="myChart"></canvas>
+  return (
+    <Box sx={{ p: { xs: "0em 4em", sm: "0em 3em", lg: "0em 6em" } }}>
+      {pieChart}
+    </Box>
+  );
 };
 
 export default FinanceDiagram;

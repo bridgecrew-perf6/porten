@@ -3,18 +3,18 @@ import ListController from "./ListController/ListController";
 import { useSort } from "../../../hooks/useSort";
 import { useFilter } from "../../../hooks/useFilter";
 import ItemTransaction from "./ItemTransaction/ItemTransaction";
-import { useSelector } from "react-redux";
 import MenuList from "@mui/material/MenuList";
 import { Box, Typography } from "@mui/material";
 
-const TransactionList = ({ transactions }) => {
-  const myCategories = useSelector((state) => state.userData.myCategories);
+const TransactionList = ({ transactions, categories }) => {
   const [filterProp, setFilterProp, resultTransactions] = useFilter(
     transactions,
     ""
   );
+
   const [sortMode, setSortMode, sortedTransactions] =
     useSort(resultTransactions);
+
 
   return transactions.length < 1 ? (
     <Box>
@@ -22,9 +22,9 @@ const TransactionList = ({ transactions }) => {
     </Box>
   ) : (
     <Box>
-      {myCategories && (
+      {categories && (
         <ListController
-          myCategories={myCategories}
+        categories={categories}
           setSortMode={setSortMode}
           setFilterProp={setFilterProp}
           sortMode={sortMode}
@@ -33,12 +33,8 @@ const TransactionList = ({ transactions }) => {
       <MenuList>
         {sortedTransactions.map((item, index) => (
           <ItemTransaction
-            date={item.date}
-            category={item.category}
-            key={index}
-            amount={item.amount}
-            isSpend={item.isSpend}
-            description={item.description}
+          data={item}
+          key={item.id}
           />
         ))}
       </MenuList>

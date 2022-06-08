@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import { Button } from "@mui/material";
@@ -9,7 +9,7 @@ import Select from "@mui/material/Select";
 import { Box } from "@mui/system";
 
 const ListController = ({
-  myCategories,
+  categories,
   setSortMode,
   setFilterProp,
   sortMode,
@@ -18,14 +18,17 @@ const ListController = ({
 
   const handleChange = (event) => {
     setCategory(event.target.value);
-    setFilterProp(event.target.value)
+    setFilterProp(event.target.value);
   };
 
-
   return (
-    <Box sx={{display: 'flex', mb: '1em'}}>
-      <Button variant="outlined" sx={{mr: '1em'}} onClick={() => setSortMode((prevMode) => !prevMode)}>
-        date {sortMode ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
+    <Box sx={{ display: "flex", mb: "1em" }}>
+      <Button
+        variant="outlined"
+        sx={{ mr: "1em" }}
+        onClick={() => setSortMode((prevMode) => !prevMode)}
+      >
+        date {sortMode ? <ArrowDownwardIcon /> : <ArrowUpwardIcon />}
       </Button>
       <FormControl fullWidth>
         <InputLabel id="demo-simple-select-standard-label">category</InputLabel>
@@ -39,11 +42,13 @@ const ListController = ({
           <MenuItem value="">
             <em>all</em>
           </MenuItem>
-          {myCategories.map((item, index) => (
-            item.isMine ? <MenuItem value={item.category} key={index}>
-            {item.category}
-          </MenuItem> : null
-          ))}
+          {categories.map((item, index) =>
+            item.isMine ? (
+              <MenuItem value={item.category} key={index}>
+                {item.category}
+              </MenuItem>
+            ) : null
+          )}
         </Select>
       </FormControl>
     </Box>

@@ -1,38 +1,20 @@
+import { firebaseConfig } from "../configFirebase.js";
+import {
+  createApi,
+  fetchBaseQuery,
+} from "@reduxjs/toolkit/query/react";
 import {
   signInWithEmailAndPassword,
   getAuth,
-  createUserWithEmailAndPassword,
   signOut,
   updateProfile,
-  onAuthStateChanged,
 } from "firebase/auth";
 
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  query,
-  orderBy,
-  limit,
-  onSnapshot,
-  setDoc,
-  doc,
-  serverTimestamp,
-  getDocs,
-  getDoc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-} from "firebase/firestore";
-
 function me() {
-return getAuth();
-}
-function db() {
-  return getFirestore();
+  return getAuth();
 }
 
-export const authAPI = {
+export const authAPItest = {
   signIn(email, password) {
     return signInWithEmailAndPassword(me(), email, password)
       .then((response) => {
@@ -42,7 +24,6 @@ export const authAPI = {
         return error;
       });
   },
-
 
   logOut() {
     return signOut(me())
@@ -55,109 +36,106 @@ export const authAPI = {
   },
 };
 
-export const initAPI = {
-  getCategories() {
-    const docRef = doc(db(), "initApp/defaultCategories");
-
-    return getDoc(docRef).then((response) => {
-      if (response.exists()) {
-        return { ...response.data() };
-      } else {
-        return response.error;
-      }
-    });
-  },
-
-  setCategories(userId, categories) {
-    let resultArray = [];
-
-    for (let key in categories) {
-      resultArray = [...resultArray, categories[key]];
-    }
-
-    return setDoc(doc(db(), `users/${userId}`), {
-      transactions: arrayUnion(),
-      categories: arrayUnion(...resultArray),
-    })
-      .then((response) => {
-        return response;
-      })
-      .catch((error) => {
-        return error;
-      });
-  },
-};
-
 export const userActionsAPI = {
-
   updateUserName(newUserName) {
-    updateProfile(me().currentUser, {
+    return updateProfile(me().currentUser, {
       displayName: newUserName,
     });
   },
-
-  getAllTransactions(userId) {
-    return getDoc(doc(db(), `users/${userId}`)).then((response) => {
-      if (response.exists()) {
-        const transactions = response.data().transactions;
-
-        transactions.forEach((transaction) => {
-          transaction.date = transaction.date.seconds;
-        });
-
-        return transactions;
-      } else {
-        return response.error;
-      }
-    });
-  },
-
-  getAllCategories(userId) {
-    return getDoc(doc(db(), `users/${userId}`)).then((response) => {
-      if (response.exists()) {
-        const categories = response.data().categories;
-
-        return categories;
-      } else {
-        return response.error;
-      }
-    });
-  },
-
-  addTransaction(transaction) {
-    const userId = me().currentUser.uid;
-
-    return updateDoc(doc(db(), `users/${userId}`), {
-      transactions: arrayUnion(transaction),
-    })
-  },
-
-  addNewCategory(category) {
-    const userId = me().currentUser.uid;
-
-    return updateDoc(doc(db(), `users/${userId}`), {
-      categories: arrayUnion({ category, isMine: true, img: "" }),
-    })
-  },
-
-  updateCategories(category) {
-    const userId = me().currentUser.uid;
-    let categoriesArray = [];
-    const userDataRef = doc(db(), `users/${userId}`);
-
-    return getDoc(userDataRef).then((data) => {
-      if (data.exists()) {
-        const categories = data.data().categories;
-        categoriesArray = [...categories];
-
-        updateDoc(userDataRef, {
-          categories: categoriesArray.filter(
-            (item) => item.category !== category
-          ),
-        })
-
-        this.addNewCategory(category)
-      }
-    });
-  },
 };
+
+export const transactionsAPI = createApi({
+  reducerPath: "transactionsAPI",
+  baseQuery: fetchBaseQuery({
+    baseUrl: `https://${firebaseConfig.projectId}-default-rtdb.europe-west1.firebasedatabase.app/users/`,
+  }),
+  providesTags: "transactions",
+  endpoints: (builder) => ({
+    getTransactions: builder.query({
+      query: (uid) => ({
+        url: `${uid}/transactions.json`,
+        method: "GET",
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...Object.entries(result).map((inner) => ({
+                id: inner[0],
+                type: "transactions",
+              })),
+              { type: "transactions", id: "LIST" },
+            ]
+          : [{ type: "transactions", id: "LIST" }],
+    }),
+    addTransaction: builder.mutation({
+      query: ({ newTrans, uid }) => ({
+        url: `${uid}/transactions.json`,
+        method: "POST",
+        body: {
+          ...newTrans,
+        },
+      }),
+      invalidatesTags: [{ type: "transactions", id: "LIST" }],
+    }),
+  }),
+});
+
+export const { useGetTransactionsQuery, useAddTransactionMutation } =
+  transactionsAPI;
+
+export const categoriesAPI = createApi({
+  reducerPath: "categoriesAPI",
+  baseQuery: fetchBaseQuery({
+    baseUrl: `https://${firebaseConfig.projectId}-default-rtdb.europe-west1.firebasedatabase.app/users/`,
+  }),
+  providesTags: "categories",
+  endpoints: (builder) => ({
+    getCategories: builder.query({
+      query: (uid) => ({
+        url: `${uid}/categories.json`,
+        method: "GET",
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...Object.entries(result).map((inner) => ({
+                id: inner[0],
+                type: "categories",
+              })),
+              { type: "categories", id: "LIST" },
+            ]
+          : [{ type: "categories", id: "LIST" }],
+    }),
+
+    addNewCategory: builder.mutation({
+      query: ({ category, uid, color }) => ({
+        url: `${uid}/categories.json`,
+        method: "POST",
+        body: {
+          category,
+          img: "",
+          isMine: true,
+          color,
+        },
+      }),
+      invalidatesTags: [{ type: "categories", id: "LIST" }],
+    }),
+
+    updateCategory: builder.mutation({
+      query: ({ category, uid }) => ({
+        url: `${uid}/categories/${category.id}.json`,
+        method: "PATCH",
+        body: {
+          isMine: true,
+        },
+      }),
+      invalidatesTags: [{ type: "categories", id: "LIST" }],
+    }),
+  }),
+});
+
+export const {
+  useGetCategoriesQuery,
+  useAddNewCategoryMutation,
+  useUpdateCategoryMutation,
+} = categoriesAPI;

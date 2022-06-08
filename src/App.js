@@ -10,22 +10,19 @@ import SignForm from "./components/Auth/SignForm/SignForm";
 import AlertComponent from "./components/Alert/AlertComponent";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { logOut, setCurrentUser } from "./redux/authSlice";
-import Preloader from "./components/Preloader/Preloadr.jsx";
 import { initApp } from "./redux/initSlice";
 
-
 function App() {
-  const isFetching = useSelector((state) => state.preloader.isFetching);
   const dispatch = useDispatch();
   const isAlert = useSelector((state) => state.alert.isTurned);
   const initialized = useSelector((state) => state.init.initialized);
+  const uid = useSelector((state) => state.auth.uid);
 
   if (!initialized) {
-
     onAuthStateChanged(getAuth(), (user) => {
       if (user) {
-        let { uid, displayName, email } = user;
-        dispatch(setCurrentUser({ uid, displayName, email }));
+        let { uid, email } = user;
+        dispatch(setCurrentUser({ uid, email }));
       } else {
         dispatch(logOut());
       }
@@ -33,11 +30,7 @@ function App() {
       dispatch(initApp());
     });
 
-    return
-  }
-
-  if (isFetching) {
-    return <Preloader />;
+    return;
   }
 
   return (
@@ -50,9 +43,8 @@ function App() {
         margin: "0 auto",
       }}
     >
-      <Header sx={{ paddingBottom: "1rem" }} />
+      <Header sx={{ paddingBottom: "1rem" }} uid={uid} />
       <Routes>
-
         <Route path="/" element={<GeneralWindow />} />
 
         <Route path="/sign/*" element={<SignForm />} />

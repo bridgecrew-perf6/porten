@@ -1,39 +1,44 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormik } from "formik";
-import {
-  createUser,
-  setReady,
-  remReady,
-  setCurrentUser,
-} from "../../../redux/authSlice";
+import { createUser } from "../../../redux/authSlice";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Box, Button, TextField, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { InputLabel } from "@mui/material";
 import { validateAuth } from "../../../common/validation/validateAuth";
 import { turnOnAlert } from "../../../redux/alertSlice";
-import {
-  getDefaultCategories,
-  setDefaultCategories,
-} from "../../../redux/userDataSlice";
-import {
-  turnOnPreloader,
-  turnOffPreloader,
-} from "../../../redux/preloaderSlice";
 import { getAuth } from "firebase/auth";
+import {
+  useGetDefaultCategoriesQuery,
+  useGetInitUserDataQuery,
+  useSetDefaultCategoriesMutation,
+  useSetInitUserDataMutation,
+} from "../../../redux/initSlice";
+import Preloader from "../../Preloader/Preloadr";
+import { useSetUserDataMutation } from "../../../redux/userDataSlice";
+import MyTextField from "../../MyTextField/MyTextField";
 
 const LoginForm = () => {
   const isLogged = useSelector((state) => state.auth.isLogged);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [navigateToSign, setNavigateToSign] = useState(false);
+  const { data: defaultCategories } = useGetDefaultCategoriesQuery();
+  const [setDefaultCategories] = useSetDefaultCategoriesMutation();
+  const { data: defaultUserData } = useGetInitUserDataQuery();
+  const [setDefaultUserData] = useSetInitUserDataMutation();
+  const [isFetching, setIsFetching] = useState(false);
+  const [setUserData] = useSetUserDataMutation();
 
   useEffect(() => {
-    if (isLogged) return navigate("/window");
-  }, [isLogged]);
-
-  const navigateToSign = () => {
-    return navigate("/sign");
-  };
+    if (isLogged) {
+      return navigate("/window");
+    } else if (navigateToSign) {
+      return navigate("/sign");
+    }
+  }, [isLogged, navigate, navigateToSign]);
+  //"now < 1654203600000"
+  //"now < 1654203600000"
 
   const formik = useFormik({
     initialValues: {
@@ -43,60 +48,44 @@ const LoginForm = () => {
       userName: "",
     },
     validate: validateAuth,
-    onSubmit: ({ email, password, userName }, submitProps) => {
-      dispatch(turnOnPreloader());
+    onSubmit: async ({ email, password, userName }, submitProps) => {
+      setIsFetching(true);
+      const isUserCreated = await dispatch(
+        createUser({ email, password, userName })
+      );
 
-      dispatch(setReady());
-      dispatch(createUser({ email, password, userName })).then((response) => {
-        debugger;
-        if (!response.error) {
-          dispatch(getDefaultCategories())
-            .then((data) => {
-              const categories = { ...data.payload.data };
-              const userId = response.payload;
-              dispatch(setDefaultCategories({ userId, categories }))
-                .then((response) => {
-                  if (!response.error) {
-                    const user = getAuth().currentUser;
-                    const { uid, displayName, email } = user;
-                    dispatch(remReady());
-                    dispatch(turnOffPreloader());
-                    dispatch(setCurrentUser({ uid, displayName, email }));
-                    dispatch(
-                      turnOnAlert({
-                        type: "success",
-                        title: response.meta.requestStatus,
-                        text: "you are logged in",
-                      })
-                    );
-                  } else {
-                    dispatch(turnOffPreloader());
-                    dispatch(
-                      turnOnAlert({
-                        type: "error",
-                        title: response.error.message,
-                        text: "smt went wrong",
-                      })
-                    );
-                  }
-                })
-            })
-        } else {
-          dispatch(turnOffPreloader());
-          dispatch(
-            turnOnAlert({
-              type: "error",
-              title: response.meta.requestStatus,
-              text: response.error.message,
-            })
-          );
-          setTimeout(() => {
-            submitProps.resetForm();
-          }, 3000);
-        }
-      });
+      if (!isUserCreated.error) {
+        const { uid } = getAuth().currentUser;
+        await setDefaultCategories({ uid, defaultCategories });
+        await setDefaultUserData({ uid, defaultUserData });
+        await setUserData({ uid, field: "userName", fillField: userName });
+
+        dispatch(
+          turnOnAlert({
+            type: "success",
+            title: isUserCreated.meta.requestStatus,
+            text: "you are logged in",
+          })
+        );
+      } else {
+        dispatch(
+          turnOnAlert({
+            type: "error",
+            title: isUserCreated.meta.requestStatus,
+            text: isUserCreated.error.message,
+          })
+        );
+        setTimeout(() => {
+          submitProps.resetForm();
+        }, 3000);
+      }
+      setIsFetching(false);
     },
   });
+
+  if (isFetching) {
+    return <Preloader />;
+  }
 
   return (
     <Box
@@ -138,29 +127,19 @@ const LoginForm = () => {
           <InputLabel sx={{ flex: 1 }} htmlFor="userName">
             enter username
           </InputLabel>
-          <TextField
-            sx={{ flex: 2 }}
-            type="text"
-            onBlur={formik.handleBlur}
-            id="userName"
-            name="userName"
-            required
-            variant="outlined"
+          <MyTextField
+            styles={{ flex: 2 }}
             value={formik.values.userName}
-            onChange={formik.handleChange}
+            type="text"
+            ph="new name"
+            name="userName"
+            required={true}
+            formik={formik}
+            error={{
+              text: formik.errors.userName,
+              align: "right",
+            }}
           />
-          {formik.errors.userName ? (
-            <Typography
-              sx={{
-                color: "red",
-                fontSize: "small",
-                flexBasis: "100%",
-                textAlign: "right",
-              }}
-            >
-              {formik.errors.userName}
-            </Typography>
-          ) : null}
         </Box>
         <Box
           sx={{
@@ -174,30 +153,19 @@ const LoginForm = () => {
           <InputLabel sx={{ flex: 1 }} htmlFor="email">
             enter email
           </InputLabel>
-          <TextField
-            sx={{ flex: 2 }}
-            type="email"
-            placeholder="example@mail.com"
-            onBlur={formik.handleBlur}
-            id="email"
-            name="email"
-            required
-            variant="outlined"
+          <MyTextField
+            styles={{ flex: 2 }}
             value={formik.values.email}
-            onChange={formik.handleChange}
+            type="email"
+            ph="example@mail.host"
+            name="email"
+            required={true}
+            formik={formik}
+            error={{
+              text: formik.errors.email,
+              align: "right",
+            }}
           />
-          {formik.errors.email ? (
-            <Typography
-              sx={{
-                color: "red",
-                fontSize: "small",
-                flexBasis: "100%",
-                textAlign: "right",
-              }}
-            >
-              {formik.errors.email}
-            </Typography>
-          ) : null}
         </Box>
         <Box
           sx={{
@@ -211,29 +179,18 @@ const LoginForm = () => {
           <InputLabel htmlFor="password" sx={{ flex: 1 }}>
             enter password
           </InputLabel>
-          <TextField
-            sx={{ flex: 2 }}
-            type="password"
-            onBlur={formik.handleBlur}
-            id="password"
-            name="password"
-            required
-            variant="outlined"
+          <MyTextField
+            styles={{ flex: 2 }}
             value={formik.values.password}
-            onChange={formik.handleChange}
+            type="password"
+            name="password"
+            required={true}
+            formik={formik}
+            error={{
+              text: formik.errors.password,
+              align: "right",
+            }}
           />
-          {formik.errors.password ? (
-            <Typography
-              sx={{
-                color: "red",
-                fontSize: "small",
-                flexBasis: "100%",
-                textAlign: "right",
-              }}
-            >
-              {formik.errors.password}
-            </Typography>
-          ) : null}
         </Box>
         <Box
           sx={{
@@ -247,35 +204,24 @@ const LoginForm = () => {
           <InputLabel htmlFor="repeatPassword" sx={{ flex: 1 }}>
             repeat password
           </InputLabel>
-          <TextField
-            sx={{ flex: 2 }}
-            type="password"
-            onBlur={formik.handleBlur}
-            id="repeatPassword"
-            name="repeatPassword"
-            required
-            variant="outlined"
+          <MyTextField
+            styles={{ flex: 2 }}
             value={formik.values.repeatPassword}
-            onChange={formik.handleChange}
+            type="password"
+            name="repeatPassword"
+            required={true}
+            formik={formik}
+            error={{
+              text: formik.errors.repeatPassword,
+              align: "right",
+            }}
           />
-          {formik.errors.repeatPassword ? (
-            <Typography
-              sx={{
-                color: "red",
-                fontSize: "small",
-                flexBasis: "100%",
-                textAlign: "right",
-              }}
-            >
-              {formik.errors.repeatPassword}
-            </Typography>
-          ) : null}
         </Box>
         <Button type="submit" variant="outlined">
           submit
         </Button>
         <Typography sx={{ textAlign: "center" }}>or</Typography>
-        <Button variant="outlined" onClick={() => navigateToSign()}>
+        <Button variant="outlined" onClick={() => setNavigateToSign(true)}>
           log in
         </Button>
       </form>

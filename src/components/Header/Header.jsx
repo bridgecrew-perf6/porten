@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import CurrencyExchangeRoundedIcon from "@mui/icons-material/CurrencyExchangeRounded";
@@ -8,11 +8,15 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { logOut } from "../../redux/authSlice";
 import { turnOnAlert } from "../../redux/alertSlice";
 import { resetUserData } from "../../redux/userDataSlice";
+import NavBar from "../NavBar/NavBar";
+import { useGetUserDataQuery } from "../../redux/userDataSlice";
 
-const Header = () => {
+const Header = ({ uid }) => {
+  const { data: userData } = useGetUserDataQuery(uid);
   const dispatch = useDispatch();
-  const isLogged = useSelector((state) => state.auth.isLogged);
-  const userName = useSelector((state) => state.auth.displayName);
+
+  const { isLogged } = useSelector((state) => state.auth);
+  const [isOpenBar, setIsOpenBar] = useState(false);
 
   const logout = () => {
     dispatch(logOut()).then((data) => {
@@ -22,11 +26,15 @@ const Header = () => {
           turnOnAlert({
             type: "success",
             title: data.meta.requestStatus,
-            text: userName + " is signed out",
+            text: userData.userName + " is signed out",
           })
         );
       }
     });
+  };
+
+  const toggleOpenBar = () => {
+    setIsOpenBar((oldState) => !oldState);
   };
 
   return (
@@ -40,6 +48,7 @@ const Header = () => {
           color="inherit"
           aria-label="open drawer"
           sx={{ mr: 2 }}
+          onClick={toggleOpenBar}
         >
           <MenuIcon />
         </IconButton>
@@ -66,6 +75,13 @@ const Header = () => {
           log out
         </Button>
       ) : null}
+      {userData && (
+        <NavBar
+          userData={userData}
+          toggleOpenBar={toggleOpenBar}
+          isOpenBar={isOpenBar}
+        />
+      )}
     </Box>
   );
 };

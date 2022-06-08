@@ -1,60 +1,66 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormik } from "formik";
 import { getUserData } from "../../../redux/authSlice";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Box, Button, TextField, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { InputLabel } from "@mui/material";
 import { validateAuth } from "../../../common/validation/validateAuth";
 import { turnOnAlert } from "../../../redux/alertSlice";
-import { turnOnPreloader, turnOffPreloader } from "../../../redux/preloaderSlice";
+import Preloader from "../../Preloader/Preloadr";
+import MyTextField from "../../MyTextField/MyTextField";
 
 const SignForm = () => {
   const isLogged = useSelector((state) => state.auth.isLogged);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  const [navigateToLogin, setNavigateToLogin] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
 
   useEffect(() => {
-    if (isLogged) return navigate("/window");
-  }, [isLogged]);
-
-  const navigateToLogin = () => {
-    return navigate("/login");
-  };
-
+    if (isLogged) {
+      return navigate("/window");
+    } else if (navigateToLogin) {
+      return navigate("/login");
+    }
+  }, [isLogged, navigate, navigateToLogin]);
 
   const formik = useFormik({
     initialValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
     validate: validateAuth,
-    onSubmit: ({ email, password }, submitProps) => {
-      dispatch(turnOnPreloader())
-      dispatch(getUserData({ email, password })).then((data) => {
-        if (!data.payload.uid) {
-          dispatch(turnOffPreloader())
-          dispatch(turnOnAlert({
-            type: 'error',
-            title: 'reject',
-            text: data.payload.code,
-          }))
-        } else {
-          dispatch(turnOffPreloader())
-          dispatch(turnOnAlert({
-            type: 'success',
-            title: data.meta.requestStatus,
-            text: data.payload.displayName + ' is signed in'
-          }))
-          setTimeout(() => {
-            submitProps.resetForm()
-          }, 3000);
-        }
-      });
+    onSubmit: async ({ email, password }, submitProps) => {
+      setIsFetching(true);
+      const userData = await dispatch(getUserData({ email, password }));
+      setIsFetching(false);
+      if (!userData.payload.uid) {
+        dispatch(
+          turnOnAlert({
+            type: "error",
+            title: "reject",
+            text: userData.payload.code,
+          })
+        );
+      } else {
+        dispatch(
+          turnOnAlert({
+            type: "success",
+            title: userData.meta.requestStatus,
+            text: "you were sign in",
+          })
+        );
+        setTimeout(() => {
+          submitProps.resetForm();
+        }, 3000);
+      }
     },
   });
 
+  if (isFetching) {
+    return <Preloader />;
+  }
 
   return (
     <Box
@@ -80,7 +86,7 @@ const SignForm = () => {
         }}
       >
         <Typography
-          sx={{ typography: { xs: "h6", sm: "h4" }, textAlign: 'center'}}
+          sx={{ typography: { xs: "h6", sm: "h4" }, textAlign: "center" }}
         >
           welcome to us
         </Typography>
@@ -96,30 +102,19 @@ const SignForm = () => {
           <InputLabel sx={{ flex: 1 }} htmlFor="email">
             enter email
           </InputLabel>
-          <TextField
-            sx={{ flex: 2 }}
-            type="email"
-            placeholder="example@mail.com"
-            onBlur={formik.handleBlur}
-            id="email"
-            name="email"
-            required
-            variant="outlined"
+          <MyTextField
+            styles={{ flex: 2 }}
             value={formik.values.email}
-            onChange={formik.handleChange}
+            type="email"
+            ph="example@mail.host"
+            name="email"
+            required={true}
+            formik={formik}
+            error={{
+              text: formik.errors.email,
+              align: "right",
+            }}
           />
-          {formik.errors.email ? (
-            <Typography
-              sx={{
-                color: "red",
-                fontSize: "small",
-                flexBasis: "100%",
-                textAlign: "right",
-              }}
-            >
-              {formik.errors.email}
-            </Typography>
-          ) : null}
         </Box>
         <Box
           sx={{
@@ -133,35 +128,24 @@ const SignForm = () => {
           <InputLabel htmlFor="password" sx={{ flex: 1 }}>
             enter password
           </InputLabel>
-          <TextField
-            sx={{ flex: 2 }}
-            type="password"
-            onBlur={formik.handleBlur}
-            id="password"
-            name="password"
-            required
-            variant="outlined"
+          <MyTextField
+            styles={{ flex: 2 }}
             value={formik.values.password}
-            onChange={formik.handleChange}
+            type="password"
+            name="password"
+            required={true}
+            formik={formik}
+            error={{
+              text: formik.errors.password,
+              align: "right",
+            }}
           />
-          {formik.errors.password ? (
-            <Typography
-              sx={{
-                color: "red",
-                fontSize: "small",
-                flexBasis: "100%",
-                textAlign: "right",
-              }}
-            >
-              {formik.errors.password}
-            </Typography>
-          ) : null}
         </Box>
-        <Button type="submit" variant="outlined" >
+        <Button type="submit" variant="outlined">
           submit
         </Button>
         <Typography sx={{ textAlign: "center" }}>or</Typography>
-        <Button variant="outlined" onClick={() => navigateToLogin()}>
+        <Button variant="outlined" onClick={() => setNavigateToLogin(true)}>
           registry now
         </Button>
       </form>

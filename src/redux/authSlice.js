@@ -1,10 +1,7 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import React from "react";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
-import { authAPI, userActionsAPI } from "../API/api";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { authAPItest } from "../API/api";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 const authSlice = createSlice({
   name: "authSlice",
@@ -12,37 +9,31 @@ const authSlice = createSlice({
     isLogged: false,
     uid: null,
     email: null,
-    displayName: "",
-    authError: null,
-    isReady: true
+    isReady: true,
+    user: null,
   },
   reducers: {
     setCurrentUser(state, action) {
       state.uid = action.payload.uid;
       state.email = action.payload.email;
-      state.displayName = action.payload.displayName;
       state.isLogged = true;
     },
     setReady(state, action) {
-      state.isReady = false
+      state.isReady = false;
     },
-    remReady(state, action) {
-      state.isReady = true
-    }
   },
   extraReducers: (builder) => {
     builder
       .addCase(getUserData.fulfilled, (state, action) => {
+        if (action.code === "auth/wrong-password") return;
         state.uid = action.payload.uid;
         state.email = action.payload.email;
-        state.displayName = action.payload.displayName;
       })
-      
+
       .addCase(logOut.fulfilled, (state, action) => {
         state.isLogged = false;
         state.uid = 0;
         state.email = null;
-        state.displayName = "";
       });
   },
 });
@@ -53,12 +44,12 @@ export default authSlice.reducer;
 export const getUserData = createAsyncThunk(
   "getUserData",
   async ({ email, password }) => {
-    const response = await authAPI.signIn(email, password);
+    const response = await authAPItest.signIn(email, password);
     if (response.user) {
-      let { uid, displayName, email } = { ...response.user };
-      return { uid, displayName, email };
+      let { uid, email } = { ...response.user };
+      return { uid, email };
     } else {
-      return response
+      return response;
     }
   }
 );
@@ -75,16 +66,14 @@ export const createUser = createAsyncThunk(
     );
 
     if (response.user) {
-      await userActionsAPI.updateUserName(userName)
-
-      return response.user.uid
+      return response.user.uid;
     } else {
-      return response
+      return response;
     }
   }
 );
 
 export const logOut = createAsyncThunk("logOut", async () => {
-  const response = await authAPI.logOut();
+  const response = await authAPItest.logOut();
   return response;
 });

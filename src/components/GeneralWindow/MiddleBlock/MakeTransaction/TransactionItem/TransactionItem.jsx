@@ -1,11 +1,11 @@
 import { ListItemText, MenuItem } from "@mui/material";
 import React from "react";
 
-const TransactionItem = ({ img, category, setSelectedCategory }) => {
+const TransactionItem = ({ data, setSelectedCategory }) => {
   return (
     <>
-      <MenuItem divider onClick={() => setSelectedCategory(category)}>
-        <ListItemText>{category}</ListItemText>
+      <MenuItem divider onClick={() => setSelectedCategory(data)}>
+        <ListItemText>{data.category}</ListItemText>
       </MenuItem>
     </>
   );

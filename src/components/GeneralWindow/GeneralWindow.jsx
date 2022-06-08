@@ -1,59 +1,76 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import MiddleBlock from "./MiddleBlock/MIddleBlock";
 import TransactionList from "./TransactionsList/TransactionsList";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  configureFinanceData,
-  configureMyCategories,
-  getUserCategories,
-  getUserTransactions,
-} from "../../redux/userDataSlice";
+import { configureFinanceData } from "../../redux/userDataSlice";
 import { useNavigate } from "react-router-dom";
-import { turnOnPreloader, turnOffPreloader } from "../../redux/preloaderSlice";
+import { useGetCategoriesQuery, useGetTransactionsQuery } from "../../API/api";
+import Preloader from "../Preloader/Preloadr";
+import { turnOnAlert } from "../../redux/alertSlice";
 
 const GeneralWindow = () => {
   let navigate = useNavigate();
   const dispatch = useDispatch();
   const isLogged = useSelector((state) => state.auth.isLogged);
   const uid = useSelector((state) => state.auth.uid);
-  const isReady = useSelector((state) => state.auth.isReady);
-  const transactions = useSelector((state) => state.userData.allTransactions);
-  const categories = useSelector((state) => state.userData.myCategories);
 
-  debugger
+  let {
+    data: userTransactions,
+    isLoading: isLoadingTransactions,
+    isError: isErrorLoadingTransactions,
+  } = useGetTransactionsQuery(uid);
+
+  let {
+    data: userCategories,
+    isLoading: isLoadingCategories,
+    isError: isErrorLoadingCategories,
+  } = useGetCategoriesQuery(uid);
 
   useEffect(() => {
     if (!isLogged) return navigate("/sign");
   }, [isLogged, navigate]);
 
+  if (userCategories) {
+    userCategories = Object.entries(userCategories).map((inner) => ({
+      id: inner[0],
+      ...inner[1],
+    }));
+  } else {
+    userCategories = [];
+  }
+
   useEffect(() => {
-    if (
-      uid &&
-      isLogged &&
-      isReady &&
-      transactions === null &&
-      categories === null
-    ) {
-      dispatch(turnOnPreloader());
-      dispatch(getUserCategories(uid))
-      dispatch(getUserTransactions(uid)).then(()=> {
-        dispatch(turnOffPreloader());
+    if (userCategories.length > 0 && userTransactions.length > -1) {
+      dispatch(configureFinanceData({ userCategories, userTransactions }));
+    }
+  }, [userCategories, userTransactions]);
+
+  if (userTransactions) {
+    userTransactions = Object.entries(userTransactions).map((inner) => ({
+      id: inner[0],
+      ...inner[1],
+    }));
+  } else {
+    userTransactions = [];
+  }
+
+  if (isErrorLoadingCategories || isErrorLoadingTransactions) {
+    dispatch(
+      turnOnAlert({
+        type: "loading Error",
+        title: "reject",
+        text: "smt went wrong",
       })
-    }
-  }, [isLogged, isReady, transactions, categories, uid]);
+    );
+  }
 
-  useEffect(() => {
-    if (isLogged && transactions && categories) {
-      dispatch(configureFinanceData({ transactions, categories }));
-    }
-  }, [transactions, categories, isLogged]);
+  if (isLoadingTransactions || isLoadingCategories) {
+    return <Preloader />;
+  }
 
-
-  console.log("render general middle");
   return (
-    // <div>asdfsafsdaf</div>
     <Box sx={{ flexGrow: 1 }}>
       <Grid container columns={16} gap={1} sx={{ justifyContent: "center" }}>
         <Grid
@@ -65,16 +82,15 @@ const GeneralWindow = () => {
             display: { xs: "none", md: "block" },
           }}
         >
-          <Box>xs=8first</Box>
+          <Box></Box>
         </Grid>
-        <Grid
-          item
-          xs={16}
-          sm={10}
-          md={7}
-          sx={{ padding: { xs: "1em" }, marginBottom: "1em" }}
-        >
-          {categories ? <MiddleBlock /> : null}
+        <Grid item xs={16} sm={10} md={7}>
+          {userCategories && userTransactions ? (
+            <MiddleBlock
+              transactions={userTransactions}
+              categories={userCategories}
+            />
+          ) : null}
         </Grid>
         <Grid
           item
@@ -87,7 +103,12 @@ const GeneralWindow = () => {
           }}
         >
           <Box>
-            {transactions && <TransactionList transactions={transactions} />}
+            {userTransactions && (
+              <TransactionList
+                transactions={userTransactions}
+                categories={userCategories}
+              />
+            )}
           </Box>
         </Grid>
       </Grid>

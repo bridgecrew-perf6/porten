@@ -2,53 +2,57 @@ import React, { useEffect, useState } from "react";
 import Controller from "./Controller/Controller";
 import FinanceDiagram from "./FinanceDiagram/FinanceDiagram";
 import MakeTransaction from "./MakeTransaction/MakeTransaction";
-import { useSelector } from "react-redux";
 import BalanceDetails from "./FinanceDiagram/BalanceDetails/BalanceDetails";
 import { Box, Typography } from "@mui/material";
 
-const MiddleBlock = () => {
+const MiddleBlock = ({ categories, transactions }) => {
   const [addMode, setAddMode] = useState(false);
   const [kindTrans, setKindTrans] = useState(null);
   const [dataDiagram, setMyDataDiagram] = useState(null);
   const [open, setOpen] = useState(false);
-
-  const myCategories = useSelector((state) => state.userData.myCategories);
-  const transactions = useSelector((state) => state.userData.allTransactions);
-
-
+  const [isFetching, setIsFetching] = useState(false);
+  const [colors, setColors] = useState([]);
 
   useEffect(() => {
-    if (!!myCategories) {
+    if (!!categories) {
       setMyDataDiagram(() => {
-        let amounts = [];
+        let resultArray = [];
 
-        const names = myCategories
-          .filter((item) => item.isMine)
-          .map((item) => item.category);
-
-        myCategories
-          .filter(category => category.isMine)
-          .forEach((item) => {
-          const categoryTotalAmount = transactions
-            .filter(trans => trans.isSpend)
-            .filter((trans) => trans.category === item.category)
-            .reduce((acc, trans) => (acc += trans.amount), 0);
-
-          amounts.push(categoryTotalAmount);
+        categories.forEach((category) => {
+          if (category.isMine) {
+            resultArray.push({
+              ...category,
+              hoverColor: category.color.replace("0.9", "0.6"),
+              totalAmount: transactions
+                .filter(
+                  (transaction) =>
+                    transaction.isSpend &&
+                    transaction.category === category.category
+                )
+                .reduce((acc, transaction) => (acc += transaction.amount), 0),
+            });
+          }
         });
+        let total = resultArray.reduce(
+          (acc, category) => (acc += category.totalAmount),
+          0
+        );
 
-        debugger
-        amounts = getPercent(amounts);
-
-        console.log(names, 'names')
-        console.log(amounts, 'amounts')
-        return {
-          names,
-          amounts,
-        };
+        return resultArray.map((category) => {
+          return {
+            ...category,
+            totalAmount: ((category.totalAmount * 100) / total).toFixed(1),
+          };
+        });
       });
     }
-  }, [myCategories, transactions]);
+  }, [categories, transactions]);
+
+  useEffect(() => {
+    setColors(() => {
+      return categories.map((category) => category.color);
+    });
+  }, [categories]);
 
   const handleClose = () => {
     setOpen(false);
@@ -68,23 +72,34 @@ const MiddleBlock = () => {
   };
 
   console.log("render middle");
+
   return (
     <Box>
       <BalanceDetails />
-      {dataDiagram && dataDiagram.names.length > 0 ? (
-        <FinanceDiagram dataDiagram={dataDiagram} />
+      {dataDiagram && dataDiagram.length > 0 ? (
+        <FinanceDiagram dataDiagram={dataDiagram} isFetching={isFetching} />
       ) : (
         <Box>
-          <Typography sx={{textAlign: 'center'}}>there's no data yet...</Typography>
+          <Typography sx={{ textAlign: "center" }}>
+            there's no data yet...
+          </Typography>
         </Box>
       )}
-      <Controller modeOn={modeOn} onOpen={handleClickOpen} />
+      <Controller
+        modeOn={modeOn}
+        onOpen={handleClickOpen}
+        isFetching={isFetching}
+      />
       {addMode ? (
         <MakeTransaction
+          colors={colors}
           open={open}
           onClose={handleClose}
           reset={modeOff}
           mode={kindTrans}
+          categories={categories}
+          setFetching={setIsFetching}
+          isFetching={isFetching}
         />
       ) : null}
     </Box>
@@ -92,14 +107,3 @@ const MiddleBlock = () => {
 };
 
 export default MiddleBlock;
-
-const getPercent = (list) => {
-  let total = list.reduce((acc, item) => (acc += item), 0);
-
-  if (total === 0) {
-    return [];
-  }
-  return list.map((item) => {
-    return ((item * 100) / total).toFixed(1);
-  });
-};
