@@ -26,7 +26,7 @@ const Controller = ({ modeOn, onOpen }) => {
       }}
     >
       <Tooltip
-        title="balance was spent"
+        title="balance wil decrease"
         sx={{ backgroundColor: theme.palette.background.default }}
       >
         <AddCircleOutlineIcon
@@ -38,7 +38,7 @@ const Controller = ({ modeOn, onOpen }) => {
           onClick={() => handleClickAddTrans(true)}
         ></AddCircleOutlineIcon>
       </Tooltip>
-      <Tooltip title="balance was added">
+      <Tooltip title="balance wil increase">
         <RemoveCircleOutlineIcon
           color="fail"
           sx={{

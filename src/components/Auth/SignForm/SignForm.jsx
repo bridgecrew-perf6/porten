@@ -51,10 +51,10 @@ const SignForm = () => {
             text: "you were sign in",
           })
         );
-        setTimeout(() => {
-          submitProps.resetForm();
-        }, 3000);
       }
+      setTimeout(() => {
+        submitProps.resetForm();
+      }, 3000);
     },
   });
 
