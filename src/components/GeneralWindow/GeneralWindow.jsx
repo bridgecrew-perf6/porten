@@ -37,34 +37,36 @@ const GeneralWindow = () => {
       id: inner[0],
       ...inner[1],
     }));
-  } else {
+  } else if (userCategories === null) {
     userCategories = [];
   }
-
-  useEffect(() => {
-    if (userCategories.length > 0 && userTransactions.length > -1) {
-      dispatch(configureFinanceData({ userCategories, userTransactions }));
-    }
-  }, [userCategories, userTransactions]);
 
   if (userTransactions) {
     userTransactions = Object.entries(userTransactions).map((inner) => ({
       id: inner[0],
       ...inner[1],
     }));
-  } else {
+  } else if (userTransactions === null) {
     userTransactions = [];
   }
 
-  if (isErrorLoadingCategories || isErrorLoadingTransactions) {
-    dispatch(
-      turnOnAlert({
-        type: "loading Error",
-        title: "reject",
-        text: "smt went wrong",
-      })
-    );
-  }
+  useEffect(() => {
+    if (Array.isArray(userCategories) && Array.isArray(userTransactions)) {
+      dispatch(configureFinanceData({ userCategories, userTransactions }));
+    }
+  }, [userCategories, userTransactions]);
+
+  useEffect(() => {
+    if (isErrorLoadingCategories || isErrorLoadingTransactions) {
+      dispatch(
+        turnOnAlert({
+          type: "error",
+          title: "reject",
+          text: "smt went wrong",
+        })
+      );
+    }
+  }, [isErrorLoadingCategories, isErrorLoadingTransactions]);
 
   if (isLoadingTransactions || isLoadingCategories) {
     return <Preloader />;

@@ -23,7 +23,7 @@ const AlertComponent = () => {
 
   return (
     <Alert
-      severity={"success"}
+      severity={type}
       sx={{ position: "sticky", bottom: 0, maxWidth: "60%" }}
     >
       <AlertTitle>{type}</AlertTitle>

@@ -17,6 +17,7 @@ const ChooseCategory = ({
   const [isNewCategory, setIsNewCategory] = useState(false);
   const [filterProp, setFilterProp, resultList] = useFilter(categories, "");
 
+  console.log(resultList);
   useEffect(() => {
     if (selectedCategory) {
       setDescriptionPageMode(true);
@@ -54,6 +55,7 @@ const ChooseCategory = ({
       </Typography>
       <Box sx={{ display: "flex", alignItems: "stretch", gap: ".5em" }}>
         <TextField
+          autoFocus={true}
           id="outlined-basic"
           type="search"
           label="search category"

@@ -68,6 +68,7 @@ const DescriptionPage = ({
           {isNewCategory ? (
             <Box sx={{ flex: "1", display: "flex", flexFlow: "column nowrap" }}>
               <MyTextField
+                autoFocus={isNewCategory}
                 styles={{ display: "flex", flex: "1" }}
                 value={formik.values.category}
                 type="text"
@@ -84,6 +85,7 @@ const DescriptionPage = ({
           ) : null}
           <Box sx={{ flex: "1", display: "flex", flexFlow: "column nowrap" }}>
             <MyTextField
+              autoFocus={!isNewCategory}
               styles={{ display: "flex", flex: "1" }}
               value={formik.values.amount}
               type="text"

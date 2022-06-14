@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useFormik } from "formik";
-import { createUser } from "../../../redux/authSlice";
+import { createUser, setCurrentUser } from "../../../redux/authSlice";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Box, Button, Typography } from "@mui/material";
@@ -22,13 +22,19 @@ const LoginForm = () => {
   const isLogged = useSelector((state) => state.auth.isLogged);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [navigateToSign, setNavigateToSign] = useState(false);
-  const { data: defaultCategories } = useGetDefaultCategoriesQuery();
-  const [setDefaultCategories] = useSetDefaultCategoriesMutation();
-  const { data: defaultUserData } = useGetInitUserDataQuery();
-  const [setDefaultUserData] = useSetInitUserDataMutation();
   const [isFetching, setIsFetching] = useState(false);
-  const [setUserData] = useSetUserDataMutation();
+  const [navigateToSign, setNavigateToSign] = useState(false);
+  //
+  const { data: defaultCategories, isError: isErrorGetDefCat } =
+    useGetDefaultCategoriesQuery();
+  const [setDefaultCategories, { isError: isErrorSetDefCat }] =
+    useSetDefaultCategoriesMutation();
+  const { data: defaultUserData, isError: isErrorGetUserData } =
+    useGetInitUserDataQuery();
+  const [setDefaultUserData, { isError: isErrorSetInitUserData }] =
+    useSetInitUserDataMutation();
+  const [setUserData, { isError: isErrorSetUserData }] =
+    useSetUserDataMutation();
 
   useEffect(() => {
     if (isLogged) {
@@ -37,8 +43,6 @@ const LoginForm = () => {
       return navigate("/sign");
     }
   }, [isLogged, navigate, navigateToSign]);
-  //"now < 1654203600000"
-  //"now < 1654203600000"
 
   const formik = useFormik({
     initialValues: {
@@ -56,6 +60,7 @@ const LoginForm = () => {
 
       if (!isUserCreated.error) {
         const { uid } = getAuth().currentUser;
+        dispatch(setCurrentUser({ uid, email }));
         await setDefaultCategories({ uid, defaultCategories });
         await setDefaultUserData({ uid, defaultUserData });
         await setUserData({ uid, field: "userName", fillField: userName });
@@ -85,6 +90,22 @@ const LoginForm = () => {
 
   if (isFetching) {
     return <Preloader />;
+  }
+
+  if (
+    isErrorGetDefCat ||
+    isErrorGetUserData ||
+    isErrorSetUserData ||
+    isErrorSetInitUserData ||
+    isErrorSetDefCat
+  ) {
+    dispatch(
+      turnOnAlert({
+        type: "error",
+        title: "reject",
+        text: "smt went wrong",
+      })
+    );
   }
 
   return (

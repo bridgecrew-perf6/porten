@@ -14,9 +14,6 @@ const MyTextField = ({
   error = null,
   label = null,
 }) => {
-  if (label) {
-    ph = false;
-  }
 
   return (
     <>
