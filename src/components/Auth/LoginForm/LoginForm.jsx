@@ -60,10 +60,10 @@ const LoginForm = () => {
 
       if (!isUserCreated.error) {
         const { uid } = getAuth().currentUser;
-        dispatch(setCurrentUser({ uid, email }));
         await setDefaultCategories({ uid, defaultCategories });
         await setDefaultUserData({ uid, defaultUserData });
         await setUserData({ uid, field: "userName", fillField: userName });
+        dispatch(setCurrentUser({ uid, email }));
 
         dispatch(
           turnOnAlert({
