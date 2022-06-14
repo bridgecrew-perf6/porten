@@ -56,17 +56,6 @@ const GeneralWindow = () => {
     }
   }, [userCategories, userTransactions]);
 
-  useEffect(() => {
-    if (isErrorLoadingCategories || isErrorLoadingTransactions) {
-      dispatch(
-        turnOnAlert({
-          type: "error",
-          title: "reject",
-          text: "smt went wrong",
-        })
-      );
-    }
-  }, [isErrorLoadingCategories, isErrorLoadingTransactions]);
 
   if (isLoadingTransactions || isLoadingCategories) {
     return <Preloader />;

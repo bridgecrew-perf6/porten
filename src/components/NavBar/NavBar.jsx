@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import CheckIcon from "@mui/icons-material/Check";
@@ -14,16 +14,22 @@ import MyTextField from "../MyTextField/MyTextField";
 
 const NavBar = ({ isOpenBar, toggleOpenBar, userData }) => {
   const [editModeUser, setEditModeUser] = useState(false);
-  const [editModeInformation, setEditInformation] = useState(false);
   const [isApplyModeUser, setIsApplyModeUser] = useState(false);
   const [isApplyModeInformation, setIsApplyModeInformation] = useState(false);
+  const [editModeInformation, setEditInformation] = useState(false);
+  const dispatch = useDispatch();
+
   const theme = useTheme();
   const barSize = theme.leftBar.left;
   const { email } = useSelector((state) => state.auth);
-  const [setNewUserName, { isLoading: isLoadingSettingNewName }] =
-    useSetUserDataMutation();
-  const [setNewUserPhone, { isLoading: isLoadingSettingNewPhone }] =
-    useSetUserDataMutation();
+  const [
+    setNewUserName,
+    { isLoading: isLoadingSettingNewName, isError: isErrorSettingName },
+  ] = useSetUserDataMutation();
+  const [
+    setNewUserPhone,
+    { isLoading: isLoadingSettingNewPhone, isError: isErrorSettingPhone },
+  ] = useSetUserDataMutation();
 
   const resetState = (setMode, setApply, ...other) => {
     setMode(false);
@@ -121,7 +127,12 @@ const NavBar = ({ isOpenBar, toggleOpenBar, userData }) => {
           {!editModeUser ? (
             <Typography
               sx={{
-                typography: { xs: "h5", sm: "body1", md: "body2", lg: "body2" },
+                typography: {
+                  xs: "h5",
+                  sm: "body1",
+                  md: "body2",
+                  lg: "body2",
+                },
               }}
             >
               {userData ? userData.userName : "no entered"}
